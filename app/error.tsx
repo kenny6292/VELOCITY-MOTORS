@@ -1,1 +1,1 @@
-export default function Page(){return null}
+"use client";export default function Error({reset}:{error:Error;reset:()=>void}){return <main className="container" style={{padding:"100px 0",textAlign:"center"}}><p className="muted">VELOCITY MOTORS</p><h1>Something went wrong.</h1><p className="muted">We could not complete that request.</p><button className="btn btn-primary" onClick={()=>reset()}>Try again</button></main>}
