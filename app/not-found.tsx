@@ -1,1 +1,1 @@
-export default function Page(){return null}
+import Link from "next/link";export default function NotFound(){return <main className="container" style={{padding:"100px 0",textAlign:"center"}}><p className="muted">404</p><h1>Page not found.</h1><p className="muted">The page may have moved or the vehicle may no longer be available.</p><Link href="/inventory" className="btn btn-primary">Browse inventory</Link></main>
