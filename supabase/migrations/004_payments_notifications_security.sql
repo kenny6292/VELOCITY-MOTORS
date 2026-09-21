@@ -1,0 +1,11 @@
+create type if not exists notification_type as enum ('lead','test_drive','financing','trade_in','rental','service','payment','system');
+create table if not exists notifications (id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,type notification_type not null,title text not null,body text not null,read_at timestamptz,created_at timestamptz not null default now());
+create table if not exists payment_transactions (id uuid primary key default gen_random_uuid(),user_id uuid references auth.users(id) on delete set null,reference text unique not null,amount numeric not null,currency text not null default 'NGN',status text not null default 'initialized',payment_type text not null,metadata jsonb not null default '{}',created_at timestamptz not null default now(),verified_at timestamptz);
+alter table notifications enable row level security;alter table payment_transactions enable row level security;
+create policy if not exists "users read own notifications" on notifications for select to authenticated using(auth.uid()=user_id);
+create policy if not exists "users update own notifications" on notifications for update to authenticated using(auth.uid()=user_id) with check(auth.uid()=user_id);
+create policy if not exists "users read own payments" on payment_transactions for select to authenticated using(auth.uid()=user_id);
+create index if not exists notifications_user_idx on notifications(user_id,created_at desc);
+create index if not exists payments_user_idx on payment_transactions(user_id,created_at desc);
+create index if not exists payments_reference_idx on payment_transactions(reference);
+alter table profiles add column if not exists updated_at timestamptz not null default now();
