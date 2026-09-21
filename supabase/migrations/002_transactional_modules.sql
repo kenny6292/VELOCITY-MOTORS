@@ -1,0 +1,26 @@
+-- Stage 5 transactional automotive modules
+create type if not exists booking_status as enum ('pending','confirmed','active','completed','cancelled');
+create type if not exists application_status as enum ('new','under_review','additional_info','approved','declined','completed');
+create type if not exists trade_in_status as enum ('submitted','under_review','inspection','offer_made','accepted','declined','completed');
+create table if not exists financing_applications (id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,vehicle_id uuid references public.vehicles(id) on delete set null,full_name text not null,email text not null,phone text not null,employment_status text,income numeric,down_payment numeric,loan_amount numeric,term_months integer,notes text,status application_status not null default 'new',created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create table if not exists trade_in_requests (id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,make text not null,model text not null,year integer not null,mileage integer,vin text,condition text,accident_history text,service_history text,asking_price numeric,full_name text not null,email text not null,phone text not null,notes text,status trade_in_status not null default 'submitted',created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create table if not exists rental_vehicles (id uuid primary key default gen_random_uuid(),vehicle_id uuid unique references public.vehicles(id) on delete set null,daily_rate numeric not null,weekly_rate numeric,deposit numeric default 0,available boolean not null default true,created_at timestamptz not null default now());
+create table if not exists rental_bookings (id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,rental_vehicle_id uuid not null references public.rental_vehicles(id) on delete restrict,pickup_date date not null,return_date date not null,pickup_location text not null,return_location text not null,extras jsonb not null default '[]',total_amount numeric not null default 0,status booking_status not null default 'pending',created_at timestamptz not null default now(),check(return_date>pickup_date));
+create table if not exists service_types (id uuid primary key default gen_random_uuid(),name text unique not null,description text,base_price numeric default 0,active boolean not null default true,created_at timestamptz not null default now());
+create table if not exists service_bookings (id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,vehicle_id uuid references public.vehicles(id) on delete set null,service_type_id uuid references public.service_types(id) on delete set null,full_name text not null,email text not null,phone text not null,preferred_date date not null,preferred_time time not null,notes text,status booking_status not null default 'pending',created_at timestamptz not null default now());
+alter table financing_applications enable row level security;
+alter table trade_in_requests enable row level security;
+alter table rental_vehicles enable row level security;
+alter table rental_bookings enable row level security;
+alter table service_types enable row level security;
+alter table service_bookings enable row level security;
+create policy if not exists "users manage own financing" on financing_applications for all to authenticated using(auth.uid()=user_id) with check(auth.uid()=user_id);
+create policy if not exists "users manage own trade ins" on trade_in_requests for all to authenticated using(auth.uid()=user_id) with check(auth.uid()=user_id);
+create policy if not exists "public read active rental vehicles" on rental_vehicles for select using(available=true);
+create policy if not exists "users manage own rental bookings" on rental_bookings for all to authenticated using(auth.uid()=user_id) with check(auth.uid()=user_id);
+create policy if not exists "public read active services" on service_types for select using(active=true);
+create policy if not exists "users manage own service bookings" on service_bookings for all to authenticated using(auth.uid()=user_id) with check(auth.uid()=user_id);
+create index if not exists financing_user_idx on financing_applications(user_id);
+create index if not exists trade_in_user_idx on trade_in_requests(user_id);
+create index if not exists rental_booking_dates_idx on rental_bookings(rental_vehicle_id,pickup_date,return_date);
+create index if not exists service_booking_date_idx on service_bookings(preferred_date);
