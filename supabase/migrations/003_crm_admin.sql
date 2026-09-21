@@ -1,0 +1,19 @@
+create type if not exists lead_status as enum ('new','contacted','qualified','negotiating','converted','lost');
+create type if not exists lead_source as enum ('vehicle_enquiry','contact','whatsapp','test_drive','financing','trade_in','rental','service');
+create table if not exists leads (id uuid primary key default gen_random_uuid(),customer_id uuid references auth.users(id) on delete set null,vehicle_id uuid references public.vehicles(id) on delete set null,source lead_source not null,full_name text not null,email text,phone text,message text,status lead_status not null default 'new',assigned_to uuid references auth.users(id) on delete set null,created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create table if not exists lead_activities (id uuid primary key default gen_random_uuid(),lead_id uuid not null references leads(id) on delete cascade,staff_id uuid references auth.users(id) on delete set null,type text not null,note text,created_at timestamptz not null default now());
+create table if not exists audit_logs (id uuid primary key default gen_random_uuid(),actor_id uuid references auth.users(id) on delete set null,action text not null,entity_type text not null,entity_id uuid,metadata jsonb,created_at timestamptz not null default now());
+alter table leads enable row level security;alter table lead_activities enable row level security;alter table audit_logs enable row level security;
+create or replace function public.is_staff_or_admin() returns boolean language sql stable security definer set search_path=public as $$select exists(select 1 from public.profiles where id=auth.uid() and role in ('staff','admin'))$$;
+create policy if not exists "staff manage leads" on leads for all to authenticated using(public.is_staff_or_admin() or customer_id=auth.uid()) with check(public.is_staff_or_admin() or customer_id=auth.uid());
+create policy if not exists "staff manage lead activities" on lead_activities for all to authenticated using(public.is_staff_or_admin()) with check(public.is_staff_or_admin());
+create policy if not exists "staff read audit logs" on audit_logs for select to authenticated using(public.is_staff_or_admin());
+create policy if not exists "staff create audit logs" on audit_logs for insert to authenticated with check(public.is_staff_or_admin());
+create index if not exists leads_status_idx on leads(status);create index if not exists leads_source_idx on leads(source);create index if not exists leads_assigned_idx on leads(assigned_to);create index if not exists lead_activities_lead_idx on lead_activities(lead_id);
+-- Extend admin access for existing operational tables.
+create policy if not exists "staff manage vehicles" on vehicles for all to authenticated using(public.is_staff_or_admin()) with check(public.is_staff_or_admin());
+create policy if not exists "staff manage vehicle images" on vehicle_images for all to authenticated using(public.is_staff_or_admin()) with check(public.is_staff_or_admin());
+create policy if not exists "staff manage financing" on financing_applications for all to authenticated using(public.is_staff_or_admin() or user_id=auth.uid()) with check(public.is_staff_or_admin() or user_id=auth.uid());
+create policy if not exists "staff manage trade ins" on trade_in_requests for all to authenticated using(public.is_staff_or_admin() or user_id=auth.uid()) with check(public.is_staff_or_admin() or user_id=auth.uid());
+create policy if not exists "staff manage rentals" on rental_bookings for all to authenticated using(public.is_staff_or_admin() or user_id=auth.uid()) with check(public.is_staff_or_admin() or user_id=auth.uid());
+create policy if not exists "staff manage services" on service_bookings for all to authenticated using(public.is_staff_or_admin() or user_id=auth.uid()) with check(public.is_staff_or_admin() or user_id=auth.uid());
