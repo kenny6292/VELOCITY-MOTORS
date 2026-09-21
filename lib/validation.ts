@@ -1,1 +1,1 @@
-export default function Page(){return null}
+export function isEmail(value:string){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())}export function safeText(value:unknown,max=2000){return String(value??"").trim().slice(0,max)}export function positiveAmount(value:unknown){const n=Number(value);return Number.isFinite(n)&&n>0?n:null}
