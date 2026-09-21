@@ -1,1 +1,1 @@
-export default function Page(){return null}
+export default function Cookies(){return <main className="container" style={{maxWidth:850,padding:"60px 0"}}><p className="muted">LEGAL</p><h1>Cookie Policy</h1><p className="muted">The application may use essential cookies required for authentication and secure operation. Optional analytics or marketing cookies should only be enabled when configured and disclosed.</p></main>
