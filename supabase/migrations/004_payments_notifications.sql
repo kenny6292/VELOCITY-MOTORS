@@ -1,0 +1,8 @@
+create type if not exists payment_status as enum ('initialized','pending','success','failed','abandoned','refunded');
+create table if not exists payments (id uuid primary key default gen_random_uuid(),user_id uuid references auth.users(id) on delete set null,reference text unique not null,amount numeric not null,currency text not null default 'NGN',purpose text not null,metadata jsonb not null default '{}',status payment_status not null default 'initialized',paid_at timestamptz,created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create table if not exists notifications (id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,title text not null,message text not null,type text not null,read boolean not null default false,created_at timestamptz not null default now());
+alter table payments enable row level security;alter table notifications enable row level security;
+create policy if not exists "users read own payments" on payments for select to authenticated using(user_id=auth.uid() or public.is_staff_or_admin());
+create policy if not exists "users read own notifications" on notifications for select to authenticated using(user_id=auth.uid() or public.is_staff_or_admin());
+create policy if not exists "users update own notifications" on notifications for update to authenticated using(user_id=auth.uid()) with check(user_id=auth.uid());
+create index if not exists payments_user_idx on payments(user_id);create index if not exists payments_status_idx on payments(status);create index if not exists notifications_user_idx on notifications(user_id,read,created_at desc);
