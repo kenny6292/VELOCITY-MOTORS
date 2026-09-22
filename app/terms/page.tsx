@@ -1,1 +1,22 @@
-export default function Terms(){return <main className="container" style={{maxWidth:850,padding:"60px 0"}}><p className="muted">LEGAL</p><h1>Terms of Service</h1><p className="muted">Bookings for test drives, rentals and services remain requests until confirmed by VELOCITY MOTORS. Vehicle availability, pricing and transaction terms are subject to dealership confirmation.</p></main>
+export default function Terms() {
+  return (
+    <main
+      className="container"
+      style={{
+        maxWidth: 850,
+        padding: "60px 0",
+      }}
+    >
+      <p className="muted">LEGAL</p>
+
+      <h1>Terms of Service</h1>
+
+      <p className="muted">
+        Bookings for test drives, rentals and services remain
+        requests until confirmed by VELOCITY MOTORS. Vehicle
+        availability, pricing and transaction terms are subject
+        to dealership confirmation.
+      </p>
+    </main>
+  );
+}
